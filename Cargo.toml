@@ -6,4 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.89"
 bitstream-io = "2.5.3"
+pre-commit = "0.5.2"
+
+[package.metadata.precommit]
+fmt = "cargo fmt 2>&1"
+# test = "cargo test 2>&1"
