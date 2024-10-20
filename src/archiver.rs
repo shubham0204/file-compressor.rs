@@ -30,7 +30,7 @@ pub fn archive_files(paths: &[&str], archive_file_path: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn unarchive_files(archive_file_path: &str) -> Result<()> {
+pub fn unarchive_files(archive_file_path: &str, target_dir_path: &str) -> Result<()> {
     let mut archive_file = File::open(archive_file_path)?;
     let num_files = read_u64(&mut archive_file)?;
     for _ in 0..num_files {
@@ -45,7 +45,8 @@ pub fn unarchive_files(archive_file_path: &str) -> Result<()> {
         archive_file.read_exact(&mut file_bytes)?;
 
         // create a new file and write file_bytes
-        let mut file = File::create_new(String::from_utf8(file_name_bytes)?)?;
+        let file_name = String::from_utf8(file_name_bytes)?;
+        let mut file = File::create_new(Path::new(target_dir_path).join(file_name))?;
         file.write(&file_bytes)?;
     }
     Ok(())
@@ -59,6 +60,8 @@ mod tests {
     use super::archive_files;
     use super::unarchive_files;
     use anyhow::Result;
+    use std::fs::create_dir;
+    use std::fs::remove_dir;
     use std::fs::remove_file;
     use std::fs::File;
     use std::io::Write;
@@ -77,9 +80,8 @@ mod tests {
         Ok(File::open(file_path)?.metadata()?.len())
     }
 
-    // TODO: enable test
-    // #[test]
-    fn test_archive_files() -> Result<()> {
+    #[test]
+    fn test_archiver() -> Result<()> {
         let mut file1 = File::create_new("sample1.txt")?;
         file1.write(FILE_CONTENTS.as_bytes())?;
         let mut file2 = File::create_new("sample2.txt")?;
@@ -93,34 +95,18 @@ mod tests {
                 > get_file_size_bytes("sample1.txt")? + get_file_size_bytes("sample2.txt")?
         );
 
+        create_dir("output")?;
+        unarchive_files("archive", "output")?;
+
+        assert!(get_file_size_bytes("output/sample1.txt")? > 0);
+        assert!(get_file_size_bytes("output/sample2.txt")? > 0);
+
         remove_file("sample1.txt")?;
         remove_file("sample2.txt")?;
+        remove_file("output/sample1.txt")?;
+        remove_file("output/sample2.txt")?;
         remove_file("archive")?;
-        Ok(())
-    }
-
-    // TODO: enable test
-    // #[test]
-    fn test_unarchive_files() -> Result<()> {
-        let mut file1 = File::create_new("sample1.txt")?;
-        file1.write(FILE_CONTENTS.as_bytes())?;
-        let mut file2 = File::create_new("sample2.txt")?;
-        file2.write(FILE_CONTENTS.as_bytes())?;
-
-        let input_file_paths = ["sample1.txt", "sample2.txt"];
-        archive_files(&input_file_paths, "archive")?;
-
-        remove_file("sample1.txt")?;
-        remove_file("sample2.txt")?;
-
-        unarchive_files("archive")?;
-
-        assert!(get_file_size_bytes("sample1.txt")? > 0);
-        assert!(get_file_size_bytes("sample2.txt")? > 0);
-
-        remove_file("sample1.txt")?;
-        remove_file("sample2.txt")?;
-        remove_file("archive")?;
+        remove_dir("output")?;
         Ok(())
     }
 }

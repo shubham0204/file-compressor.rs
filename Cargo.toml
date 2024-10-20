@@ -8,8 +8,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.89"
 bitstream-io = "2.5.3"
+clap = "4.5.20"
 pre-commit = "0.5.2"
 
 [package.metadata.precommit]
 fmt = "cargo fmt 2>&1"
-# test = "cargo test 2>&1"
+test = "cargo test 2>&1"
